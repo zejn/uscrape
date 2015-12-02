@@ -105,22 +105,26 @@ class TestUrlOpener(unittest.TestCase):
         self.thread.join()
 
     def test_urlopener(self):
-        from uscrape import urlopener
+        from uscrape import UrlOpener
         import time
 
-        urlopener.sleep_time = 1
+        urlopener = UrlOpener(sleep_time=1)
+        self.assertEqual(hasattr(urlopener, 'last_response'), False)
+
         t1 = time.time()
         resp = urlopener.get_url('http://127.0.0.1:8080/woo/')
-        self.assertEqual(type(resp), type([]))
-        self.assertEqual(resp[0], self.dummy_html_response)
+        self.assertEqual(hasattr(urlopener, 'last_response'), True)
+
+        self.assertEqual(type(resp), type(''))
+        self.assertEqual(resp, self.dummy_html_response)
 
         resp = urlopener.get_url('http://127.0.0.1:8080/woo2/')
         t2 = time.time()
         self.assertGreater(t2 - t1, urlopener.sleep_time)
-        self.assertEqual(resp[0], self.dummy_html_response)
+        self.assertEqual(resp, self.dummy_html_response)
 
         resp = urlopener.get_url('http://127.0.0.1:8080/raw/', raw=True)
-        self.assertEqual(resp[0], self.dummy_html_response)
+        self.assertEqual(resp, self.dummy_html_response)
 
         resp = urlopener.get_url('http://127.0.0.1:8080/404/')
         self.assertEqual(resp, '')

@@ -36,7 +36,9 @@ def to_text(elem):
 
 
 class UrlOpener(object):
-    sleep_time = 1
+    def __init__(self, sleep_time=1):
+        self.client = requests.session()
+        self.sleep_time = sleep_time
 
     def get_url(self, url, raw=False):
         """
@@ -49,65 +51,57 @@ class UrlOpener(object):
             time.sleep(waittime)
 
         resp = None
+
         # begin download
-        if 1:
+        print('Fetching...', url, file=sys.stderr)
+        n = 0
+        # adaptive timeout
+        try:
+            timeout = max(self.__last_fetch_took + 5, 30)
+        except:
+            timeout = 30
+        while True:
             try:
-                client = self.http_client
-            except:
-                client = requests
-
-            print('Fetching...', url, file=sys.stderr)
-            n = 0
-            # adaptive timeout
-            try:
-                timeout = max(self.__last_fetch_took + 5, 30)
-            except:
-                timeout = 30
-            while True:
-                try:
-                    request_start = time.time()
-                    resp = client.get(url, timeout=timeout)
-                    resp.raise_for_status()
-                    if not raw:
-                        # detect charset
-                        content_type = resp.headers.get('content-type')
-                        m = re.search(';\s*charset=(.*)\s*$', content_type, re.I)
-                        charset = None
-                        if m:
-                            charset = m.group(1).strip()
-                        else:
-                            charset = 'utf-8'
-                        try:
-                            content = resp.content.decode(charset).encode('utf-8')
-                        except:
-                            content = resp.content
+                request_start = time.time()
+                resp = self.client.get(url, timeout=timeout)
+                resp.raise_for_status()
+                if not raw:
+                    # detect charset
+                    content_type = resp.headers.get('content-type')
+                    m = re.search(';\s*charset=(.*)\s*$', content_type, re.I)
+                    charset = None
+                    if m:
+                        charset = m.group(1).strip()
                     else:
+                        charset = 'utf-8'
+                    try:
+                        content = resp.content.decode(charset).encode('utf-8')
+                    except:
                         content = resp.content
-                    html_list = [content]
-                    self.__last_fetch_took = time.time() - request_start
-                    break
-                except Exception as e:
-                    print(e)
-                    import traceback
-                    traceback.print_exc()
+                else:
+                    content = resp.content
+                self.last_response = resp
+                self.__last_fetch_took = time.time() - request_start
+                break
+            except Exception as e:
+                print(e)
+                import traceback
+                traceback.print_exc()
 
-                    if e.response.status_code in (404, 403):
-                        return ''
+                if e.response.status_code in (404, 403):
+                    return ''
 
-                    if n < 10:  # FIXME: was 5
-                        n += 1
-                        timeout = 30 * (n + 1)
-                        time.sleep(5)
-                        print('Retry %s ...' % n, file=sys.stderr)
-                    else:
-                        raise
+                if n < 10:  # FIXME: was 5
+                    n += 1
+                    timeout = 30 * (n + 1)
+                    time.sleep(5)
+                    print('Retry %s ...' % n, file=sys.stderr)
+                else:
+                    raise
         # end download
 
         self.last_fetch = time.time()
-        return html_list
-
-    def enable_http_session(self):
-        self.http_client = requests.session()
+        return content
 
 
 class Url:
