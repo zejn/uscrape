@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(name='uscrape',
-      version='0.3',
+      version='0.4',
       description='A set of commonly used functions for small scrapers.',
       author=u'Gašper Žejn'.encode('utf-8'),
       author_email='zejn@owca.info',
