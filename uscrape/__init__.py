@@ -18,7 +18,7 @@ except ImportError:
 
 
 def make_tree(url, data, encoding=None):
-    "builds lxml tree"
+    """Build lxml tree."""
     s = StringIO(data)
     parser = lxml.html.HTMLParser(encoding=encoding)
     doc = lxml.html.parse(s, parser=parser)
@@ -42,7 +42,8 @@ class UrlOpener(object):
 
     def get_url(self, url, raw=False):
         """
-        Fetches URL via GET request.
+        Fetch URL via GET request.
+
         Handles speed limit (1 request / self.sleep_time)
         Handles incremental backoff with 10 retries.
         """
@@ -88,7 +89,7 @@ class UrlOpener(object):
                 import traceback
                 traceback.print_exc()
 
-                if e.response.status_code in (404, 403):
+                if e.response and e.response.status_code in (404, 403):
                     return ''
 
                 if n < 10:  # FIXME: was 5
@@ -105,7 +106,8 @@ class UrlOpener(object):
 
 
 class Url:
-    "URL parsing class for easily changing URL parameters"
+    """URL parsing class for easily changing URL parameters."""
+
     def __init__(self, u):
         url = urlparse(u)
         self.scheme = url[0]
